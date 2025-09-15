@@ -14,14 +14,13 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Recipe, RecipeIngredient } from '../types';
 import { StorageService } from '../services/StorageService';
+import FoodSearchComponent, { FoodSelectionResult } from '../components/FoodSearchComponent';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateRecipe'>;
 
 export default function CreateRecipeScreen({ navigation, route }: Props) {
   const [recipeName, setRecipeName] = useState('');
   const [ingredients, setIngredients] = useState<RecipeIngredient[]>([]);
-  const [newIngredientName, setNewIngredientName] = useState('');
-  const [newIngredientCalories, setNewIngredientCalories] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const isEditing = !!route.params?.recipe;
@@ -34,26 +33,13 @@ export default function CreateRecipeScreen({ navigation, route }: Props) {
     }
   }, [existingRecipe]);
 
-  const addIngredient = () => {
-    if (!newIngredientName.trim() || !newIngredientCalories.trim()) {
-      Alert.alert('Validation Error', 'Please enter both ingredient name and calories');
-      return;
-    }
-
-    const calories = parseInt(newIngredientCalories);
-    if (isNaN(calories) || calories < 0) {
-      Alert.alert('Validation Error', 'Please enter a valid calorie amount');
-      return;
-    }
-
+  const handleIngredientSelected = (result: FoodSelectionResult) => {
     const newIngredient: RecipeIngredient = {
-      name: newIngredientName.trim(),
-      calories: calories,
+      name: result.name,
+      calories: result.calories,
     };
 
     setIngredients([...ingredients, newIngredient]);
-    setNewIngredientName('');
-    setNewIngredientCalories('');
   };
 
   const removeIngredient = (index: number) => {
@@ -130,30 +116,11 @@ export default function CreateRecipeScreen({ navigation, route }: Props) {
           />
         </View>
 
-        <View style={styles.addIngredientSection}>
-          <Text style={styles.sectionTitle}>Add Ingredients</Text>
-
-          <View style={styles.ingredientInputRow}>
-            <TextInput
-              style={[styles.textInput, styles.ingredientNameInput]}
-              placeholder="Ingredient name"
-              value={newIngredientName}
-              onChangeText={setNewIngredientName}
-              autoCapitalize="words"
-            />
-            <TextInput
-              style={[styles.textInput, styles.ingredientCaloriesInput]}
-              placeholder="Calories"
-              value={newIngredientCalories}
-              onChangeText={setNewIngredientCalories}
-              keyboardType="numeric"
-            />
-          </View>
-
-          <TouchableOpacity style={styles.addIngredientButton} onPress={addIngredient}>
-            <Text style={styles.addIngredientButtonText}>Add Ingredient</Text>
-          </TouchableOpacity>
-        </View>
+        <FoodSearchComponent
+          onFoodSelected={handleIngredientSelected}
+          placeholder="Search for ingredients (min 2 chars)"
+          manualEntryTitle="Add Ingredient"
+        />
 
         {ingredients.length > 0 && (
           <View style={styles.ingredientsList}>
@@ -218,44 +185,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#fff',
   },
-  addIngredientSection: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
     color: '#333',
-  },
-  ingredientInputRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  ingredientNameInput: {
-    flex: 2,
-    marginRight: 8,
-  },
-  ingredientCaloriesInput: {
-    flex: 1,
-  },
-  addIngredientButton: {
-    backgroundColor: '#2196F3',
-    padding: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  addIngredientButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
   },
   ingredientsList: {
     backgroundColor: '#fff',
