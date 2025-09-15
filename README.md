@@ -66,17 +66,25 @@ cd calorie-counter
 npm install
 ```
 
-### 3. API Configuration
+### 3. Environment Variables Setup
+
+#### Create Environment File
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Open `.env` and add your API credentials:
+   ```bash
+   EXPO_PUBLIC_EDAMAM_APP_ID=your_actual_app_id
+   EXPO_PUBLIC_EDAMAM_APP_KEY=your_actual_app_key
+   ```
 
 #### Edamam API Setup
 1. Sign up at [Edamam Developer Portal](https://developer.edamam.com/)
 2. Create a Food Database API application
 3. Get your App ID and App Key
-4. Update the credentials in `src/screens/AddFoodScreen.tsx`:
-   ```typescript
-   const EDAMAM_APP_ID = 'your_actual_app_id';
-   const EDAMAM_APP_KEY = 'your_actual_app_key';
-   ```
+4. Add them to your `.env` file (see above)
 
 #### Open Food Facts API
 No configuration required - uses public API endpoints.
@@ -236,6 +244,18 @@ The app requires the following permissions:
 
 - **Edamam API**: 5 calls/minute (free tier)
 - **Open Food Facts**: No rate limits (public API)
+
+## Environment Variables
+
+### Important Notes
+- **Expo SDK 49+**: Environment variables must be prefixed with `EXPO_PUBLIC_` to be accessible in client-side code
+- **Security**: The `.env` file is gitignored to keep API keys secure
+- **Example File**: Use `.env.example` as a template for required variables
+- **Validation**: The app will show an error if API credentials are missing
+
+### Available Variables
+- `EXPO_PUBLIC_EDAMAM_APP_ID` - Your Edamam API application ID
+- `EXPO_PUBLIC_EDAMAM_APP_KEY` - Your Edamam API key
 
 ## Troubleshooting
 

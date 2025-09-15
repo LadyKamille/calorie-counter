@@ -17,8 +17,8 @@ import { StorageService } from '../services/StorageService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddFood'>;
 
-const EDAMAM_APP_ID = 'your_app_id'; // Replace with actual credentials
-const EDAMAM_APP_KEY = 'your_app_key'; // Replace with actual credentials
+const EDAMAM_APP_ID = process.env.EXPO_PUBLIC_EDAMAM_APP_ID;
+const EDAMAM_APP_KEY = process.env.EXPO_PUBLIC_EDAMAM_APP_KEY;
 
 interface SearchResult {
   label: string;
@@ -45,6 +45,11 @@ export default function AddFoodScreen({ navigation, route }: Props) {
   const searchFoods = async (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
+      return;
+    }
+
+    if (!EDAMAM_APP_ID || !EDAMAM_APP_KEY) {
+      Alert.alert('Configuration Error', 'Edamam API credentials are not configured. Please check your .env file.');
       return;
     }
 
