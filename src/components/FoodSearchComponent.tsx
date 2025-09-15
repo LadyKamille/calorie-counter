@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { EdamamService, FoodSearchResult, FoodCalculator } from '../services/EdamamService';
 
@@ -44,6 +45,7 @@ export default function FoodSearchComponent({
   const [weight, setWeight] = useState(defaultWeight);
   const [calories, setCalories] = useState('');
   const [caloriesPer100g, setCaloriesPer100g] = useState<number | null>(null);
+  const [selectedFoodResult, setSelectedFoodResult] = useState<FoodSearchResult | null>(null);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -102,6 +104,7 @@ export default function FoodSearchComponent({
   const selectSearchResult = (result: FoodSearchResult) => {
     setFoodName(result.label);
     setCaloriesPer100g(result.calories);
+    setSelectedFoodResult(result);
     setWeight(defaultWeight);
     setCalories(result.calories.toString());
     setSearchResults([]);
@@ -124,6 +127,7 @@ export default function FoodSearchComponent({
     setCalories(newCalories);
     if (caloriesPer100g !== null) {
       setCaloriesPer100g(null);
+      setSelectedFoodResult(null);
       setWeight(defaultWeight);
     }
   };
@@ -160,6 +164,7 @@ export default function FoodSearchComponent({
     setCalories('');
     setWeight(defaultWeight);
     setCaloriesPer100g(null);
+    setSelectedFoodResult(null);
   };
 
   const renderSearchResult = ({ item }: { item: FoodSearchResult }) => (
@@ -167,8 +172,19 @@ export default function FoodSearchComponent({
       style={styles.searchResultItem}
       onPress={() => selectSearchResult(item)}
     >
-      <Text style={styles.resultName}>{item.label}</Text>
-      <Text style={styles.resultCalories}>{item.calories} cal/100g → Tap to add</Text>
+      <View style={styles.foodImageContainer}>
+        {item.image ? (
+          <Image source={{ uri: item.image }} style={styles.foodImage} />
+        ) : (
+          <View style={styles.foodImagePlaceholder}>
+            <Text style={styles.foodImagePlaceholderText}>🍽️</Text>
+          </View>
+        )}
+      </View>
+      <View style={styles.resultContent}>
+        <Text style={styles.resultName}>{item.label}</Text>
+        <Text style={styles.resultCalories}>{item.calories} cal/100g → Tap to add</Text>
+      </View>
     </TouchableOpacity>
   );
 
@@ -244,20 +260,25 @@ export default function FoodSearchComponent({
             <View style={styles.weightPresets}>
               <Text style={styles.presetsLabel}>Quick weights:</Text>
               <View style={styles.presetButtons}>
-                {[50, 100, 150, 200].map((presetWeight) => (
+                {(selectedFoodResult ? FoodCalculator.getWeightPresets(selectedFoodResult) : [
+                  { label: '50g', weight: 50 },
+                  { label: '100g', weight: 100 },
+                  { label: '150g', weight: 150 },
+                  { label: '200g', weight: 200 }
+                ]).map((preset) => (
                   <TouchableOpacity
-                    key={presetWeight}
+                    key={preset.label}
                     style={[
                       styles.presetButton,
-                      weight === presetWeight.toString() && styles.presetButtonActive
+                      weight === preset.weight.toString() && styles.presetButtonActive
                     ]}
-                    onPress={() => handleWeightChange(presetWeight.toString())}
+                    onPress={() => handleWeightChange(preset.weight.toString())}
                   >
                     <Text style={[
                       styles.presetButtonText,
-                      weight === presetWeight.toString() && styles.presetButtonTextActive
+                      weight === preset.weight.toString() && styles.presetButtonTextActive
                     ]}>
-                      {presetWeight}g
+                      {preset.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -350,13 +371,38 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  foodImageContainer: {
+    marginRight: 12,
+  },
+  foodImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  foodImagePlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: '#f8f8f8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  foodImagePlaceholderText: {
+    fontSize: 20,
+  },
+  resultContent: {
+    flex: 1,
+    justifyContent: 'center',
   },
   resultName: {
     fontSize: 16,
     color: '#333',
-    flex: 1,
+    marginBottom: 2,
   },
   resultCalories: {
     fontSize: 14,
