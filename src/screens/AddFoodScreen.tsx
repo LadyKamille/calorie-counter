@@ -12,10 +12,10 @@ import {
   Platform,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, EdamamResponse, EdamamFood } from '../types';
+import { RootStackParamList } from '../types';
 import { StorageService } from '../services/StorageService';
 import { EdamamTestService } from '../services/EdamamTestService';
-import { EdamamService, FoodSearchResult } from '../services/EdamamService';
+import { EdamamService, FoodSearchResult, FoodItem, FoodCalculator } from '../services/EdamamService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddFood'>;
 
@@ -29,6 +29,8 @@ export default function AddFoodScreen({ navigation, route }: Props) {
   const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([]);
   const [foodName, setFoodName] = useState('');
   const [calories, setCalories] = useState('');
+  const [weight, setWeight] = useState('100');
+  const [caloriesPer100g, setCaloriesPer100g] = useState<number | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
 
@@ -104,9 +106,34 @@ export default function AddFoodScreen({ navigation, route }: Props) {
 
   const selectSearchResult = (result: FoodSearchResult) => {
     setFoodName(result.label);
-    setCalories(result.calories.toString());
+    setCaloriesPer100g(result.calories);
+    setWeight('100'); // Default to 100g
+    setCalories(result.calories.toString()); // Start with 100g calories
     setSearchResults([]);
     setSearchQuery('');
+  };
+
+  // Update calories when weight changes
+  const handleWeightChange = (newWeight: string) => {
+    setWeight(newWeight);
+
+    if (caloriesPer100g !== null && newWeight.trim()) {
+      const weightValue = parseFloat(newWeight);
+      if (!isNaN(weightValue) && weightValue > 0) {
+        const calculatedCalories = FoodCalculator.calculateCalories(caloriesPer100g, weightValue);
+        setCalories(calculatedCalories.toString());
+      }
+    }
+  };
+
+  // Clear weight calculation when entering manual calories
+  const handleManualCalorieChange = (newCalories: string) => {
+    setCalories(newCalories);
+    if (caloriesPer100g !== null) {
+      // Clear the calculation state to allow manual entry
+      setCaloriesPer100g(null);
+      setWeight('100');
+    }
   };
 
   const addFood = async () => {
@@ -148,7 +175,7 @@ export default function AddFoodScreen({ navigation, route }: Props) {
       onPress={() => selectSearchResult(item)}
     >
       <Text style={styles.resultName}>{item.label}</Text>
-      <Text style={styles.resultCalories}>{item.calories} cal/100g</Text>
+      <Text style={styles.resultCalories}>{item.calories} cal/100g → Tap to customize</Text>
     </TouchableOpacity>
   );
 
@@ -203,14 +230,61 @@ export default function AddFoodScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Calories</Text>
+          <Text style={styles.inputLabel}>Weight (grams)</Text>
           <TextInput
             style={styles.textInput}
-            placeholder="Enter calories"
-            value={calories}
-            onChangeText={setCalories}
+            placeholder="Enter weight in grams"
+            value={weight}
+            onChangeText={handleWeightChange}
             keyboardType="numeric"
           />
+          {caloriesPer100g !== null && (
+            <Text style={styles.helpText}>
+              {caloriesPer100g} cal/100g
+            </Text>
+          )}
+        </View>
+
+        {caloriesPer100g !== null && (
+          <View style={styles.weightPresets}>
+            <Text style={styles.presetsLabel}>Quick weights:</Text>
+            <View style={styles.presetButtons}>
+              {[50, 100, 150, 200].map((presetWeight) => (
+                <TouchableOpacity
+                  key={presetWeight}
+                  style={[
+                    styles.presetButton,
+                    weight === presetWeight.toString() && styles.presetButtonActive
+                  ]}
+                  onPress={() => handleWeightChange(presetWeight.toString())}
+                >
+                  <Text style={[
+                    styles.presetButtonText,
+                    weight === presetWeight.toString() && styles.presetButtonTextActive
+                  ]}>
+                    {presetWeight}g
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Total Calories</Text>
+          <TextInput
+            style={[styles.textInput, caloriesPer100g !== null && styles.calculatedInput]}
+            placeholder="Enter calories"
+            value={calories}
+            onChangeText={handleManualCalorieChange}
+            keyboardType="numeric"
+            editable={caloriesPer100g === null} // Only editable for manual entry
+          />
+          {caloriesPer100g !== null && (
+            <Text style={styles.helpText}>
+              Automatically calculated from weight
+            </Text>
+          )}
         </View>
 
         <TouchableOpacity
@@ -363,5 +437,50 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  helpText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  calculatedInput: {
+    backgroundColor: '#f0f8f0',
+    borderColor: '#4CAF50',
+  },
+  weightPresets: {
+    marginBottom: 16,
+  },
+  presetsLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#333',
+  },
+  presetButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  presetButton: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+    padding: 8,
+    borderRadius: 4,
+    alignItems: 'center',
+    marginHorizontal: 2,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  presetButtonActive: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  presetButtonText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '600',
+  },
+  presetButtonTextActive: {
+    color: '#fff',
   },
 });

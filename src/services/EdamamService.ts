@@ -6,8 +6,32 @@ const EDAMAM_APP_KEY = process.env.EXPO_PUBLIC_EDAMAM_APP_KEY;
 
 export interface FoodSearchResult {
   label: string;
-  calories: number;
+  calories: number; // calories per 100g
   id: string;
+}
+
+export interface FoodItem {
+  label: string;
+  caloriesPer100g: number;
+  weight: number; // in grams
+  totalCalories: number;
+  id: string;
+}
+
+export class FoodCalculator {
+  static calculateCalories(caloriesPer100g: number, weightInGrams: number): number {
+    return Math.round((caloriesPer100g * weightInGrams) / 100);
+  }
+
+  static createFoodItem(searchResult: FoodSearchResult, weightInGrams: number = 100): FoodItem {
+    return {
+      label: searchResult.label,
+      caloriesPer100g: searchResult.calories,
+      weight: weightInGrams,
+      totalCalories: this.calculateCalories(searchResult.calories, weightInGrams),
+      id: searchResult.id,
+    };
+  }
 }
 
 export class EdamamService {
