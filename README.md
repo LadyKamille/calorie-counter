@@ -78,28 +78,20 @@ npm install
    ```bash
    EXPO_PUBLIC_EDAMAM_APP_ID=your_actual_app_id
    EXPO_PUBLIC_EDAMAM_APP_KEY=your_actual_app_key
-   EXPO_PUBLIC_EDAMAM_USER_ID=your_user_id  # Required for Meal Planner plans
+   # EXPO_PUBLIC_EDAMAM_USER_ID not needed for Food Database API
    ```
 
 #### Edamam API Setup
 1. Sign up at [Edamam Developer Portal](https://developer.edamam.com/)
-2. Subscribe to the **Recipe Search API** (or Meal Planner Developer plan)
+2. Subscribe to the **Food Database API**
 3. Get your credentials from your dashboard:
    - **App ID** and **App Key** (found in your application details)
-   - **User ID** (for Meal Planner plans - found in account settings or dashboard)
 4. Add them to your `.env` file (see above)
 
-**Finding Your User ID** (Meal Planner plans):
-- Log into your Edamam dashboard
-- Look for "Account Settings" or "User Profile"
-- Your User ID is typically displayed there
-- It might also be in the API documentation section of your account
-
 **Supported Plans:**
-- ✅ Recipe Search API (free tier)
-- ✅ Meal Planner Developer plan
-- ✅ Food Database API (with automatic fallback)
-- ✅ Nutrition Analysis API (basic ingredients)
+- ✅ Food Database API (recommended)
+- ✅ Free tier with 5 calls/minute
+- ✅ Nutrition data per 100g serving
 
 #### Open Food Facts API
 No configuration required - uses public API endpoints.
@@ -257,8 +249,7 @@ The app requires the following permissions:
 
 ## API Rate Limits
 
-- **Edamam Recipe Search API**: 5 calls/minute, 10,000/month (free tier)
-- **Edamam Meal Planner Developer**: Higher limits (check your plan)
+- **Edamam Food Database API**: 5 calls/minute, 10,000/month (free tier)
 - **Open Food Facts**: No rate limits (public API)
 
 ## Environment Variables
@@ -270,9 +261,8 @@ The app requires the following permissions:
 - **Validation**: The app will show an error if API credentials are missing
 
 ### Available Variables
-- `EXPO_PUBLIC_EDAMAM_APP_ID` - Your Edamam API application ID
-- `EXPO_PUBLIC_EDAMAM_APP_KEY` - Your Edamam API key
-- `EXPO_PUBLIC_EDAMAM_USER_ID` - Your User ID (required for Meal Planner plans)
+- `EXPO_PUBLIC_EDAMAM_APP_ID` - Your Edamam Food Database API application ID
+- `EXPO_PUBLIC_EDAMAM_APP_KEY` - Your Edamam Food Database API key
 
 ## Troubleshooting
 

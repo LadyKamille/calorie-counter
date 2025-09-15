@@ -9,7 +9,7 @@ export class EdamamTestService {
 
   // Test Food Database API v2 (current implementation)
   static async testFoodDatabaseAPI(query: string = 'apple') {
-    const url = `https://api.edamam.com/api/food-database/v2/parser?app_id=${EDAMAM_APP_ID}&app_key=${EDAMAM_APP_KEY}&ingr=${encodeURIComponent(query)}&nutrition-type=cooking`;
+    const url = `https://api.edamam.com/api/food-database/v2/parser?app_id=${EDAMAM_APP_ID}&app_key=${EDAMAM_APP_KEY}&ingr=${encodeURIComponent(query)}`;
 
     console.log('Testing Food Database API v2...');
     console.log('URL:', url);

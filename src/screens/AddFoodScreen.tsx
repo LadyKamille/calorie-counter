@@ -148,7 +148,7 @@ export default function AddFoodScreen({ navigation, route }: Props) {
       onPress={() => selectSearchResult(item)}
     >
       <Text style={styles.resultName}>{item.label}</Text>
-      <Text style={styles.resultCalories}>{item.calories} cal/serving</Text>
+      <Text style={styles.resultCalories}>{item.calories} cal/100g</Text>
     </TouchableOpacity>
   );
 
