@@ -45,7 +45,6 @@ export class EdamamService {
     // Use the Food Database API v2 format as provided
     const url = `https://api.edamam.com/api/food-database/v2/parser?app_id=${EDAMAM_APP_ID}&app_key=${EDAMAM_APP_KEY}&ingr=${encodeURIComponent(query)}`;
 
-    console.log('Food Database API URL:', url);
 
     const response = await fetch(url);
 
@@ -78,10 +77,8 @@ export class EdamamService {
   // Main search method using Food Database API v2
   static async searchFoods(query: string): Promise<FoodSearchResult[]> {
     try {
-      console.log('Using Food Database API v2...');
       return await this.searchFoodDatabase(query);
     } catch (error) {
-      console.error('Food Database API failed:', error);
       throw new Error(`Food Database API failed: ${error}`);
     }
   }

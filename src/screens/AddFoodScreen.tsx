@@ -14,15 +14,10 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { StorageService } from '../services/StorageService';
-import { EdamamTestService } from '../services/EdamamTestService';
 import { EdamamService, FoodSearchResult, FoodItem, FoodCalculator } from '../services/EdamamService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddFood'>;
 
-const EDAMAM_APP_ID = process.env.EXPO_PUBLIC_EDAMAM_APP_ID;
-const EDAMAM_APP_KEY = process.env.EXPO_PUBLIC_EDAMAM_APP_KEY;
-
-// Using FoodSearchResult from EdamamService
 
 export default function AddFoodScreen({ navigation, route }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -297,31 +292,6 @@ export default function AddFoodScreen({ navigation, route }: Props) {
           ) : (
             <Text style={styles.addButtonText}>Add to Log</Text>
           )}
-        </TouchableOpacity>
-
-        {/* Debug Buttons - Remove after testing */}
-        <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: '#FF5722', marginTop: 10 }]}
-          onPress={() => EdamamTestService.runAllTests()}
-        >
-          <Text style={styles.addButtonText}>🐛 Test All APIs (Check Console)</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: '#9C27B0', marginTop: 10 }]}
-          onPress={async () => {
-            try {
-              console.log('Testing new search service...');
-              const results = await EdamamService.searchFoods('chicken');
-              console.log('Search results:', results);
-              Alert.alert('Test Results', `Found ${results.length} results. Check console for details.`);
-            } catch (error) {
-              console.error('Test error:', error);
-              Alert.alert('Test Error', `${error}`);
-            }
-          }}
-        >
-          <Text style={styles.addButtonText}>🚀 Test New Search</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
