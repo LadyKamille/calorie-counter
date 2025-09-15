@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,21 +14,19 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, EdamamResponse, EdamamFood } from '../types';
 import { StorageService } from '../services/StorageService';
+import { EdamamTestService } from '../services/EdamamTestService';
+import { EdamamService, FoodSearchResult } from '../services/EdamamService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddFood'>;
 
 const EDAMAM_APP_ID = process.env.EXPO_PUBLIC_EDAMAM_APP_ID;
 const EDAMAM_APP_KEY = process.env.EXPO_PUBLIC_EDAMAM_APP_KEY;
 
-interface SearchResult {
-  label: string;
-  calories: number;
-  foodId: string;
-}
+// Using FoodSearchResult from EdamamService
 
 export default function AddFoodScreen({ navigation, route }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([]);
   const [foodName, setFoodName] = useState('');
   const [calories, setCalories] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -48,51 +46,63 @@ export default function AddFoodScreen({ navigation, route }: Props) {
       return;
     }
 
-    if (!EDAMAM_APP_ID || !EDAMAM_APP_KEY) {
-      Alert.alert('Configuration Error', 'Edamam API credentials are not configured. Please check your .env file.');
-      return;
-    }
-
     setIsSearching(true);
     try {
-      const response = await fetch(
-        `https://api.edamam.com/api/food-database/v2/parser?app_id=${EDAMAM_APP_ID}&app_key=${EDAMAM_APP_KEY}&ingr=${encodeURIComponent(query)}&nutrition-type=cooking`
-      );
-
-      if (!response.ok) {
-        throw new Error('Search failed');
-      }
-
-      const data: EdamamResponse = await response.json();
-
-      const results: SearchResult[] = data.parsed.map((item) => ({
-        label: item.food.label,
-        calories: Math.round(item.food.nutrients.ENERC_KCAL || 0),
-        foodId: item.food.foodId,
-      }));
-
+      const results = await EdamamService.searchFoods(query);
       setSearchResults(results);
     } catch (error) {
       console.error('Search error:', error);
-      Alert.alert('Search Error', 'Failed to search for foods. Please try again.');
+      Alert.alert('Search Error', `${error}`);
       setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
   };
 
+  // Debounce ref to store timeout
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const handleSearchTextChange = (text: string) => {
     setSearchQuery(text);
 
-    // Debounce search
-    const timeoutId = setTimeout(() => {
-      searchFoods(text);
-    }, 500);
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
 
-    return () => clearTimeout(timeoutId);
+    // If search is empty, clear results immediately
+    if (!text.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    // Require minimum 2 characters for search
+    if (text.trim().length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    // Show loading state immediately for better UX
+    setIsSearching(true);
+
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      searchFoods(text);
+    }, 800); // Increased to 800ms for better API rate limiting
   };
 
-  const selectSearchResult = (result: SearchResult) => {
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const selectSearchResult = (result: FoodSearchResult) => {
     setFoodName(result.label);
     setCalories(result.calories.toString());
     setSearchResults([]);
@@ -132,13 +142,13 @@ export default function AddFoodScreen({ navigation, route }: Props) {
     }
   };
 
-  const renderSearchResult = ({ item }: { item: SearchResult }) => (
+  const renderSearchResult = ({ item }: { item: FoodSearchResult }) => (
     <TouchableOpacity
       style={styles.searchResultItem}
       onPress={() => selectSearchResult(item)}
     >
       <Text style={styles.resultName}>{item.label}</Text>
-      <Text style={styles.resultCalories}>{item.calories} cal/100g</Text>
+      <Text style={styles.resultCalories}>{item.calories} cal/serving</Text>
     </TouchableOpacity>
   );
 
@@ -151,7 +161,7 @@ export default function AddFoodScreen({ navigation, route }: Props) {
         <Text style={styles.sectionTitle}>Search Foods</Text>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search for foods (e.g., chicken breast, apple)"
+          placeholder="Search for foods (min 2 chars, e.g., chicken, apple)"
           value={searchQuery}
           onChangeText={handleSearchTextChange}
           autoCapitalize="none"
@@ -170,7 +180,7 @@ export default function AddFoodScreen({ navigation, route }: Props) {
             <FlatList
               data={searchResults}
               renderItem={renderSearchResult}
-              keyExtractor={(item) => item.foodId}
+              keyExtractor={(item) => item.id}
               style={styles.resultsList}
               showsVerticalScrollIndicator={false}
             />
@@ -213,6 +223,31 @@ export default function AddFoodScreen({ navigation, route }: Props) {
           ) : (
             <Text style={styles.addButtonText}>Add to Log</Text>
           )}
+        </TouchableOpacity>
+
+        {/* Debug Buttons - Remove after testing */}
+        <TouchableOpacity
+          style={[styles.addButton, { backgroundColor: '#FF5722', marginTop: 10 }]}
+          onPress={() => EdamamTestService.runAllTests()}
+        >
+          <Text style={styles.addButtonText}>🐛 Test All APIs (Check Console)</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.addButton, { backgroundColor: '#9C27B0', marginTop: 10 }]}
+          onPress={async () => {
+            try {
+              console.log('Testing new search service...');
+              const results = await EdamamService.searchFoods('chicken');
+              console.log('Search results:', results);
+              Alert.alert('Test Results', `Found ${results.length} results. Check console for details.`);
+            } catch (error) {
+              console.error('Test error:', error);
+              Alert.alert('Test Error', `${error}`);
+            }
+          }}
+        >
+          <Text style={styles.addButtonText}>🚀 Test New Search</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
